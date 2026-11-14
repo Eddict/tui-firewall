@@ -6,6 +6,12 @@
 name: CI
 
 on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to analyze'
+        required: true
+        default: 'main'
   push:
     branches: [main]
     tags: ["v*"]
