@@ -4,10 +4,10 @@
 #
 #   git tag v0.1.0 && git push origin v0.1.0
 #
-# CI runs `goreleaser release` on a v* tag and attaches static linux/amd64 and
-# linux/arm64 archives to the GitHub release, each with its SBOM, plus a
-# checksums.txt carrying a keyless cosign signature. Generated from the
-# template in tui-kit/templates/.goreleaser.yaml.
+# CI runs `goreleaser release` on a v* tag and attaches static linux/amd64,
+# linux/arm64 and linux/armv7l archives to the GitHub release. Each archive
+# includes its SBOM; checksums.txt carries a keyless cosign signature.
+# Generated from the template in tui-kit/templates/.goreleaser.yaml.
 version: 2
 
 project_name: tui-firewall
@@ -33,12 +33,29 @@ builds:
     ldflags:
       - -s -w -X main.version={{ .Version }}
 
+  - id: tui-firewall-armv7
+    main: ./cmd/tui-firewall
+    binary: tui-firewall
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - arm
+    goarm:
+      - "7"
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
 archives:
   - id: tui-firewall
     ids:
       - tui-firewall
+      - tui-firewall-armv7
     name_template: >-
-      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+      {{ if eq .Arch "arm" }}{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_armv{{ .Arm }}l{{ else }}{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ end }}
     formats:
       - tar.gz
     files:

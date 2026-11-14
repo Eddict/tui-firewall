@@ -37,5 +37,5 @@ your change would help a second tool, it probably belongs there.
 
 ## Releases
 
-Maintainers tag `vX.Y.Z` on `main`; CI builds the static linux/amd64 and
-linux/arm64 binaries and attaches them to the release.
+Maintainers tag `vX.Y.Z` on `main`; CI builds the static linux/amd64,
+linux/arm64 and linux/armv7l binaries and attaches them to the release.
