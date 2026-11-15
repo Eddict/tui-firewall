@@ -9,6 +9,12 @@
 name: CodeQL
 
 on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to analyze'
+        required: true
+        default: 'main'
   push:
     branches: [main]
   pull_request:
