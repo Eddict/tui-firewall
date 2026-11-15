@@ -95,12 +95,38 @@ func TestParseSaveRoundTripsThroughComparable(t *testing.T) {
 	}
 }
 
+func TestParseSavePaddedRuleCounters(t *testing.T) {
+	text := "*filter\n:INPUT ACCEPT [0:0]\n" +
+		"[ 623921:  63014881] -A INPUT -j ACCEPT\n" +
+		"[0:0] -A INPUT -j DROP\nCOMMIT\n"
+	for _, family := range []Family{V4, V6} {
+		dump, err := ParseSave(family, text)
+		if err != nil {
+			t.Fatalf("%v: ParseSave: %v", family, err)
+		}
+		chain, ok := dump.Chain(TableFilter, ChainInput)
+		if !ok || len(chain.Rules) != 2 {
+			t.Fatalf("%v: missing INPUT rules", family)
+		}
+		if got, want := chain.Rules[0].Counter, (Counter{Packets: 623921, Bytes: 63014881}); got == nil || *got != want {
+			t.Errorf("%v: padded counter = %v, want %+v", family, got, want)
+		}
+		if got, want := chain.Rules[1].Counter, (Counter{}); got == nil || *got != want {
+			t.Errorf("%v: unpadded counter = %v, want %+v", family, got, want)
+		}
+	}
+}
+
 func TestParseSaveRejectsABrokenDump(t *testing.T) {
 	for name, text := range map[string]string{
 		"rule outside a table": "-A INPUT -j ACCEPT\n",
 		"never committed":      "*filter\n:INPUT ACCEPT [0:0]\n",
 		"bad chain line":       "*filter\n:INPUT\nCOMMIT\n",
 		"bad counter":          "*filter\n:INPUT ACCEPT [0:0]\n[x:1] -A INPUT -j ACCEPT\nCOMMIT\n",
+		"missing count":        "*filter\n:INPUT ACCEPT [0:0]\n[ 1: ] -A INPUT -j ACCEPT\nCOMMIT\n",
+		"embedded space":       "*filter\n:INPUT ACCEPT [0:0]\n[1 2:3] -A INPUT -j ACCEPT\nCOMMIT\n",
+		"counter overflow":     "*filter\n:INPUT ACCEPT [0:0]\n[18446744073709551616:3] -A INPUT -j ACCEPT\nCOMMIT\n",
+		"extra separator":      "*filter\n:INPUT ACCEPT [0:0]\n[1:2:3] -A INPUT -j ACCEPT\nCOMMIT\n",
 		"unterminated quote":   "*filter\n:INPUT ACCEPT [0:0]\n-A INPUT -m comment --comment \"oops -j ACCEPT\nCOMMIT\n",
 	} {
 		if _, err := ParseSave(V4, text); err == nil {
