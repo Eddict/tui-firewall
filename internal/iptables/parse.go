@@ -320,17 +320,17 @@ func addRuleLine(table *Table, line string) error {
 	return nil
 }
 
-// parseCounter reads "packets:bytes".
+// parseCounter reads "packets:bytes", including space-padded counters.
 func parseCounter(text string) (Counter, error) {
 	p, b, ok := strings.Cut(text, ":")
 	if !ok {
 		return Counter{}, fmt.Errorf("cannot read counter %q", text)
 	}
-	packets, err := strconv.ParseUint(p, 10, 64)
+	packets, err := strconv.ParseUint(strings.TrimSpace(p), 10, 64)
 	if err != nil {
 		return Counter{}, fmt.Errorf("cannot read counter %q", text)
 	}
-	bytes, err := strconv.ParseUint(b, 10, 64)
+	bytes, err := strconv.ParseUint(strings.TrimSpace(b), 10, 64)
 	if err != nil {
 		return Counter{}, fmt.Errorf("cannot read counter %q", text)
 	}
